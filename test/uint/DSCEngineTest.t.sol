@@ -22,13 +22,16 @@ contract DSCEngineTest is Test {
 
     address public USER = makeAddr("user");
     uint256 public constant AMOUNT_COLLATERAL = 10 ether;
-    uint256 public constant STARTING_ERC20_BALANCE = 10 ether;
+    uint256 public constant TARGETED_MINT_DSC_BALANCE = 1_000 ether; // = 10/2*2000 /10 
+    uint256 public constant STARTING_ERC20_BALANCE = 100 ether;
+
 
     function setUp() public {
         deployer = new DSCDeployScript();
         (dsc, engine, config) = deployer.run();
         (wethUsdPriceFeed, wbtcUsdPriceFeed, weth, wbtc,) = config.activeNetworkConfig();
         ERC20Mock(weth).mint(USER, STARTING_ERC20_BALANCE);
+        ERC20Mock(wbtc).mint(USER, STARTING_ERC20_BALANCE);
     }
 
     //////////////////
@@ -210,5 +213,40 @@ contract DSCEngineTest is Test {
     }
 
     // Write Tests 
-    
+    function testHealthFactor() public {
+        vm.startPrank(USER);
+        ERC20Mock(weth).approve(address(engine), AMOUNT_COLLATERAL);
+        engine.depositCollateralAndMintDsc(weth, AMOUNT_COLLATERAL, TARGETED_MINT_DSC_BALANCE);
+        vm.stopPrank();
+
+        uint256 healthFactor = engine.getUserHealthFactor(USER);
+        assertEq(healthFactor, 10e18);
+
+        // test other health factor
+        vm.startPrank(USER);
+        engine.redeemCollateral(weth, AMOUNT_COLLATERAL / 2);
+        vm.stopPrank();
+
+        healthFactor = engine.getUserHealthFactor(USER);
+        assertEq(healthFactor, 5e18);
+    }
+
+    function testGetAccountCollateralValue() public {
+        vm.startPrank(USER);
+        ERC20Mock(weth).approve(address(engine), AMOUNT_COLLATERAL);
+        engine.depositCollateral(weth, AMOUNT_COLLATERAL);
+        vm.stopPrank();
+        
+        uint256 collateralValue = engine.getAccountCollateralValue(USER);
+        assertEq(collateralValue, AMOUNT_COLLATERAL * 2000);
+
+        // Add WBTC collateral and check again
+        vm.startPrank(USER);
+        ERC20Mock(wbtc).approve(address(engine), AMOUNT_COLLATERAL);
+        engine.depositCollateral(wbtc, AMOUNT_COLLATERAL);
+        vm.stopPrank();
+
+        collateralValue = engine.getAccountCollateralValue(USER);
+        assertEq(collateralValue, AMOUNT_COLLATERAL * 2000 + AMOUNT_COLLATERAL * 3000);
+    }
 }

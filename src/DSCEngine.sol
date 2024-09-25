@@ -252,8 +252,6 @@ contract DSCEngine is ReentrancyGuard {
         _revertIfHealthFactorIsBroken(msg.sender);
     }
 
-    function getHealthFactor() external view {}
-
     //////////////////////////////////////////////
     // Privat Internal View Functions           //
     //////////////////////////////////////////////
@@ -303,15 +301,15 @@ contract DSCEngine is ReentrancyGuard {
     function _healthFactor(address user) private view returns (uint256) {
         // total DSC minted
         // totla collateral value
-        (uint256 totalDscMinited, uint256 collateralValueInUsed) = _getAccountInformation(user);
+        (uint256 totalDscMinted, uint256 collateralValueInUsed) = _getAccountInformation(user);
         uint256 collateralAdjustedForThreshold = (collateralValueInUsed * LIQUIDATION_THRESHOLD) / 100;
 
         // if the totalDscMinted is 0, then we can return MAX_HEALTH_FACTOR
-        if (totalDscMinited == 0) {
+        if (totalDscMinted == 0) {
             return MAX_HEALTH_FACTOR;
         }
 
-        return (collateralAdjustedForThreshold * PRECISION) / totalDscMinited;
+        return (collateralAdjustedForThreshold * PRECISION) / totalDscMinted;
     }
 
     function _revertIfHealthFactorIsBroken(address user) private view {
@@ -349,6 +347,7 @@ contract DSCEngine is ReentrancyGuard {
 
     function getUsdValue(address token, uint256 amount) public view returns (uint256) {
         AggregatorV3Interface priceFeeds = AggregatorV3Interface(s_priceFeeds[token]);
+    
         (, int256 price,,,) = priceFeeds.latestRoundData();
 
         // 1 ETH = $1000
@@ -366,5 +365,17 @@ contract DSCEngine is ReentrancyGuard {
 
     function getCollateralTokens() external view returns (address[] memory) {
         return s_collateralTokens;
+    }
+
+    function getCollateralBalanceOfUser(address user, address token) external view returns (uint256) {
+        return s_collateralDeposited[user][token];
+    }
+
+    function getUserHealthFactor(address user) external view returns (uint256) {
+        return _healthFactor(user);
+    }
+    
+    function getLiquidationThreshold() external pure returns (uint256) {
+        return LIQUIDATION_THRESHOLD;
     }
 }
