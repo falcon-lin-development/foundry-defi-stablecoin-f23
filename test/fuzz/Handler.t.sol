@@ -7,6 +7,11 @@ import {Test, console} from "forge-std/Test.sol";
 import {ERC20Mock} from "@openzeppelin/contracts/mocks/token/ERC20Mock.sol";
 import {DSCEngine} from "../../src/DSCEngine.sol";
 import {DecentralizedStableCoin} from "../../src/DecentralizedStableCoin.sol";
+import {MockV3Aggregator} from "../../test/mocks/MockV3Aggregator.sol";
+
+// Price Feed
+// WETH Token
+// WBTC Token
 
 contract Handler is Test {
     DecentralizedStableCoin dsc;
@@ -16,6 +21,8 @@ contract Handler is Test {
 
     uint256 public timesMintIsCalled;
     address[] public usersWithCollateralDeposited;
+    MockV3Aggregator public ethUsdPriceFeed;
+    MockV3Aggregator public btcUsdPriceFeed;
 
     uint256 MAX_DEPOSIT_SIZE = type(uint96).max;
 
@@ -26,6 +33,8 @@ contract Handler is Test {
         address[] memory collateralTokens = engine.getCollateralTokens();
         weth = ERC20Mock(collateralTokens[0]);
         wbtc = ERC20Mock(collateralTokens[1]);
+
+        ethUsdPriceFeed = MockV3Aggregator(engine.getCollateralTokenPriceFeed(address(weth)));
     }
 
     function mintDsc(uint256 amount, uint256 addressSeed) public {
@@ -81,6 +90,12 @@ contract Handler is Test {
         engine.redeemCollateral(address(collateral), amountCollateral);
         vm.stopPrank();
     }
+
+    // This breaks our invariant test suite!!!!
+    // function updateCollateralPrice(uint96 newPrice) public {
+    //     int256 newPriceInt = int256(uint256(newPrice));
+    //     ethUsdPriceFeed.updateAnswer(newPriceInt);
+    // }
 
     // Helper function to get a random address
     function _getCollateralFromSeed(uint256 collateralSeed) private view returns (ERC20Mock) {

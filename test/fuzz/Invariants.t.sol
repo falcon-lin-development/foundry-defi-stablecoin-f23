@@ -55,5 +55,24 @@ contract InvariantsTest is StdInvariant, Test {
         assert(wethValue + wbtcValue >= totalSupply);
     }
 
-
+    function invariant_gettersShouldNotRevert() public view {
+        /**
+         * 
+         * "getAccountCollateralValue(address)": "7d1a4450",
+            "getAccountInformation(address)": "7be564fc",
+            "getCollateralBalanceOfUser(address,address)": "31e92b83",
+            "getCollateralTokens()": "b58eb63f",
+            "getLiquidationThreshold()": "4ae9b8bc",
+            "getTokenAmountFromUsd(address,uint256)": "afea2e48",
+            "getUsdValue(address,uint256)": "c660d112",
+            "getUserHealthFactor(address)": "71cbfc98",
+         */
+        engine.getAccountInformation(address(this));
+        engine.getCollateralBalanceOfUser(address(this), address(weth));
+        engine.getCollateralTokens();
+        engine.getLiquidationThreshold();
+        engine.getTokenAmountFromUsd(address(weth), 1e18);
+        engine.getUsdValue(address(weth), 1e18);
+        engine.getUserHealthFactor(address(this));
+    }
 }

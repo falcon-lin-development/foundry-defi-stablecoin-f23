@@ -347,7 +347,7 @@ contract DSCEngine is ReentrancyGuard {
 
     function getUsdValue(address token, uint256 amount) public view returns (uint256) {
         AggregatorV3Interface priceFeeds = AggregatorV3Interface(s_priceFeeds[token]);
-    
+
         (, int256 price,,,) = priceFeeds.latestRoundData();
 
         // 1 ETH = $1000
@@ -374,8 +374,12 @@ contract DSCEngine is ReentrancyGuard {
     function getUserHealthFactor(address user) external view returns (uint256) {
         return _healthFactor(user);
     }
-    
+
     function getLiquidationThreshold() external pure returns (uint256) {
         return LIQUIDATION_THRESHOLD;
+    }
+
+    function getCollateralTokenPriceFeed(address token) external view returns (address) {
+        return s_priceFeeds[token];
     }
 }
